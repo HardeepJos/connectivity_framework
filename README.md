@@ -1,36 +1,55 @@
-# Meta Wearables Connectivity Framework
+# Android Bluetooth and Wi-Fi Connectivity Lab
 
-Small Python/pytest framework for exercising Bluetooth and Wi-Fi connectivity around a Meta wearable. The test logic is hardware-neutral; a device integration implements `WearableAdapter`, while the included fake adapter makes the suite deterministic in CI.
+Python connectivity test framework for Android-focused Bluetooth and Wi-Fi validation. It includes a deterministic fake adapter, a host BLE adapter backed by Bleak, a read-only Android ADB Wi-Fi/radio adapter, a browsable scenario catalog, and a local web dashboard.
 
-## Quick start
+## Setup
 
-```powershell
-py -m pip install -e ".[test]"
-py -m pytest
-py -m meta_wearables.cli
-py -m meta_wearables.cli --probe-host 192.168.1.1 --probe-port 443 --json
-py -m meta_wearables.web
+```bash
+python -m pip install -e ".[test]"
 ```
 
-On Windows, you can also double-click `launch_ui.bat`. Keep that terminal window open while using the UI, then open `http://127.0.0.1:8765`.
+Optional host BLE support:
 
-Then open `http://127.0.0.1:8765`. Select **Real Bluetooth device** to scan using `bleak`; install it with `py -m pip install -e ".[bluetooth]"`. The UI can discover and connect to a BLE-visible wearable. Wi-Fi checks are shown as skipped when the selected adapter cannot expose that signal.
+```bash
+python -m pip install -e ".[bluetooth]"
+```
 
-The suite currently covers:
+Run the automated regression tests:
 
-- Bluetooth discovery
-- Bluetooth connect and reconnect
-- Bluetooth Classic profiles: 1.0, 1.1, 1.2, 2.0+EDR, 2.1+EDR, 3.0+HS, 4.0, 4.1, 4.2, 5.0, 5.1, 5.2, 5.3, and 5.4
-- Bluetooth Low Energy profiles: 4.0, 4.1, 4.2, 5.0, 5.1, 5.2, 5.3, and 5.4
-- Wi-Fi association state and IP address
-- Wi-Fi 802.11a/b/g/n/ac/ax/be profiles
-- Wi-Fi gateway and DNS configuration
-- Optional TCP reachability probe from the connected network
-- Wi-Fi reconnect
-- Structured results with pass/fail/skip status, timing, and details
+```bash
+python -m pytest -q
+```
 
-## Adding real hardware
+## Start the dashboard
 
-Implement `WearableAdapter` in `src/meta_wearables/adapters.py` using the transport APIs available in the lab. The optional `bleak` dependency can support BLE discovery, but Meta wearable pairing, media commands, and Wi-Fi provisioning may require the Meta companion app or an approved device-facing API. Those operations should be implemented in the adapter rather than guessed by the test cases.
+```bash
+python -m wearables.web
+```
 
-The fake adapter is intentionally separate from the real adapter so CI tests do not need Bluetooth hardware or a live Wi-Fi network.
+Open `http://127.0.0.1:8765`. On Windows, `launch_ui.bat` starts it. The dashboard supports search, Bluetooth/Wi-Fi filters, category filters, quick smoke/BLE/Wi-Fi presets, selected or full-suite runs, results summaries, remembered selections, and JSON export. Full-catalog runs ask for confirmation because many scenarios require Android instrumentation and lab fixtures.
+
+### Dashboard adapters
+
+- **Demo / fake device** — deterministic framework/UI checks only; it does not exercise physical Android hardware.
+- **Host BLE device (Bleak)** — scans and connects to BLE peripherals using the computer's Bluetooth adapter. Wi-Fi and many Android-specific tests are skipped if no adapter evidence exists.
+- **Android phone via ADB** — reads Android Wi-Fi status and Bluetooth radio state without changing settings. Enable USB/wireless debugging, authorize this computer, and optionally provide the ADB serial if multiple devices are attached. BLE app-level scanning, pairing, GATT operations, and Classic profiles require an Android instrumentation companion; these are shown as skipped rather than simulated.
+
+## Android test catalog
+
+See [ANDROID_TEST_CATALOG.md](ANDROID_TEST_CATALOG.md) for the full scenario inventory and prerequisites. The dashboard also includes Bluetooth Classic/BLE version checks, BLE feature checks across versions 4.0–6.0, and Wi-Fi 802.11 a/b/g/n/ac/ax/be profile checks.
+
+### Android access considerations
+
+- Android 12+ uses runtime Nearby devices permissions for Bluetooth scanning/connecting; location and background execution behavior varies by Android release and OEM.
+- Wi-Fi SSID/BSSID and scan details may be restricted by Android permissions, location settings, and OS/OEM policy.
+- GATT, Classic profile, audio, hotspot, roaming, WPA-Enterprise, throughput, packet-loss, and RF-range tests need the corresponding peer/AP fixtures and often a native Android instrumentation app.
+- The ADB adapter is intentionally read-only. Scenarios that toggle radios, change credentials, interrupt DHCP/DNS, remove bonds, or disrupt connectivity must be run only in an isolated lab through an explicitly instrumented adapter.
+
+## CLI
+
+```bash
+wearable-test
+wearable-test --probe-host 192.168.1.1 --probe-port 443 --json
+```
+
+The fake adapter is intentionally separate from device adapters so CI does not need Bluetooth hardware or a live Wi-Fi network.

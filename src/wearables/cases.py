@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 
 from .adapters import WearableAdapter
 from .models import TestCaseResult, TestStatus
 from .probes import tcp_probe
+from .scenarios import ANDROID_SCENARIOS, ScenarioSpec
 
 
 CLASSIC_VERSIONS = ("1.0", "1.1", "1.2", "2.0+EDR", "2.1+EDR", "3.0+HS", "4.0", "4.1", "4.2", "5.0", "5.1", "5.2", "5.3", "5.4", "6.0")
@@ -28,6 +29,80 @@ WIFI_STANDARDS = ("802.11a", "802.11b", "802.11g", "802.11n", "802.11ac", "802.1
 class ConnectivityTestCase:
     name: str
     run: Callable[[], TestCaseResult]
+    domain: str = "Connectivity"
+    category: str = "Connectivity"
+    title: str = ""
+    description: str = ""
+    requirement: str = ""
+    mode: str = "adapter"
+
+
+def _scenario_case(adapter: WearableAdapter, spec: ScenarioSpec) -> ConnectivityTestCase:
+    def check_capability() -> TestCaseResult:
+        if spec.domain == "Bluetooth":
+            get_capabilities = getattr(adapter, "capability_info", None)
+            capabilities = get_capabilities("bluetooth") if callable(get_capabilities) else None
+            if capabilities is None:
+                try:
+                    capabilities = adapter.bluetooth_info().capabilities
+                except Exception:
+                    capabilities = None
+        else:
+            try:
+                capabilities = adapter.wifi_info().capabilities
+            except Exception:
+                capabilities = None
+
+        if capabilities is None or spec.id not in capabilities or capabilities[spec.id] is None:
+            return TestCaseResult(
+                spec.id,
+                TestStatus.SKIPPED,
+                f"No adapter evidence for this scenario. Requirement: {spec.requirement}",
+            )
+        passed = bool(capabilities[spec.id])
+        return _result(
+            spec.id,
+            passed,
+            f"{spec.title}: {'validated' if passed else 'not validated'} by the selected adapter",
+            evidence_key=spec.id,
+        )
+
+    return ConnectivityTestCase(
+        spec.id,
+        check_capability,
+        domain=spec.domain,
+        category=spec.category,
+        title=spec.title,
+        description=spec.description,
+        requirement=spec.requirement,
+        mode=spec.mode,
+    )
+
+
+def _expand_catalog(adapter: WearableAdapter, cases: list[ConnectivityTestCase], domain: str) -> list[ConnectivityTestCase]:
+    specs = {spec.id: spec for spec in ANDROID_SCENARIOS if spec.domain == domain}
+    expanded: list[ConnectivityTestCase] = []
+    existing_names: set[str] = set()
+    for case in cases:
+        existing_names.add(case.name)
+        spec = specs.get(case.name)
+        if spec:
+            expanded.append(
+                replace(
+                    case,
+                    domain=spec.domain,
+                    category=spec.category,
+                    title=spec.title,
+                    description=spec.description,
+                    requirement=spec.requirement,
+                    mode=spec.mode,
+                )
+            )
+        else:
+            group = "Bluetooth versions/features" if domain == "Bluetooth" else "Wi-Fi standards"
+            expanded.append(replace(case, domain=domain, category=group, title=case.name.replace("_", " ").title()))
+    expanded.extend(_scenario_case(adapter, spec) for key, spec in specs.items() if key not in existing_names)
+    return expanded
 
 
 def _result(name: str, passed: bool, message: str, **details: object) -> TestCaseResult:
@@ -152,7 +227,7 @@ def bluetooth_cases(adapter: WearableAdapter) -> list[ConnectivityTestCase]:
         for version, features in BLE_FEATURES_BY_VERSION.items()
         for feature in features
     )
-    return cases
+    return _expand_catalog(adapter, cases, "Bluetooth")
 
 
 def wifi_cases(adapter: WearableAdapter, probe_host: str | None = None, probe_port: int = 443) -> list[ConnectivityTestCase]:
@@ -232,4 +307,4 @@ def wifi_cases(adapter: WearableAdapter, probe_host: str | None = None, probe_po
         ConnectivityTestCase("wifi_reconnect", reconnect),
     ]
     cases.extend(standard_case(standard) for standard in WIFI_STANDARDS)
-    return cases
+    return _expand_catalog(adapter, cases, "Wi-Fi")

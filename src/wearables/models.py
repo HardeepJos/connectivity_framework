@@ -20,6 +20,7 @@ class DeviceInfo:
     profile: str | None = None
     signal_ok: bool | None = None
     bluetooth_features: tuple[str, ...] | None = None
+    capabilities: dict[str, bool | None] | None = None
 
 
 @dataclass(frozen=True)
@@ -48,3 +49,8 @@ class WifiInfo:
     roaming: bool = False
     internet_reachable: bool | None = None
     password_valid: bool | None = None
+    bssid: str | None = None
+    frequency_mhz: int | None = None
+    link_speed_mbps: int | None = None
+    ipv6_addresses: tuple[str, ...] = ()
+    capabilities: dict[str, bool | None] | None = None

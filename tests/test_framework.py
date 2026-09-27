@@ -1,7 +1,15 @@
-from meta_wearables.adapters import FakeWearableAdapter, UnsupportedAdapterOperation
-from meta_wearables.cases import BLE_FEATURES_BY_VERSION, BLE_VERSIONS, CLASSIC_VERSIONS, WIFI_STANDARDS, bluetooth_cases, wifi_cases
-from meta_wearables.models import TestStatus as CaseStatus
-from meta_wearables.runner import TestRunner as CaseRunner
+import json
+from threading import Thread
+from urllib.request import urlopen
+from http.server import ThreadingHTTPServer
+
+from wearables.adapters import FakeWearableAdapter, UnsupportedAdapterOperation
+from wearables.android_adb import AndroidAdbAdapter
+from wearables.cases import BLE_FEATURES_BY_VERSION, BLE_VERSIONS, CLASSIC_VERSIONS, WIFI_STANDARDS, bluetooth_cases, wifi_cases
+from wearables.models import TestStatus as CaseStatus
+from wearables.runner import TestRunner as CaseRunner
+from wearables.scenarios import ANDROID_SCENARIOS
+from wearables.web import Handler
 
 
 def test_all_fake_connectivity_cases_pass_except_unconfigured_probe() -> None:
@@ -93,3 +101,72 @@ def test_unsupported_hardware_operation_is_skipped() -> None:
     results = CaseRunner(wifi_cases(Adapter())).run()
 
     assert results[0].status is CaseStatus.SKIPPED
+
+
+def test_android_catalog_scenarios_are_registered_for_execution() -> None:
+    adapter = FakeWearableAdapter()
+    case_ids = {case.name for case in bluetooth_cases(adapter) + wifi_cases(adapter)}
+
+    assert len(ANDROID_SCENARIOS) >= 85
+    assert {scenario.id for scenario in ANDROID_SCENARIOS} <= case_ids
+    assert {scenario.domain for scenario in ANDROID_SCENARIOS} == {"Bluetooth", "Wi-Fi"}
+
+
+def test_android_capability_cases_report_pass_fail_and_skip_from_evidence() -> None:
+    adapter = FakeWearableAdapter(
+        bluetooth_capabilities={
+            "bluetooth_android_radio_enabled": True,
+            "bluetooth_background_scan": False,
+        },
+        wifi_capabilities={"wifi_radio_enabled": True},
+    )
+    results = CaseRunner(bluetooth_cases(adapter) + wifi_cases(adapter)).run()
+    by_name = {result.name: result for result in results}
+
+    assert by_name["bluetooth_android_radio_enabled"].status is CaseStatus.PASSED
+    assert by_name["bluetooth_background_scan"].status is CaseStatus.FAILED
+    assert by_name["bluetooth_gatt_read"].status is CaseStatus.SKIPPED
+    assert by_name["wifi_radio_enabled"].status is CaseStatus.PASSED
+
+
+def test_android_adb_adapter_does_not_fake_ble_scanning_or_pairing() -> None:
+    adapter = AndroidAdbAdapter()
+
+    try:
+        adapter.discover()
+    except UnsupportedAdapterOperation as error:
+        assert "instrumentation" in str(error)
+    else:
+        raise AssertionError("ADB adapter should not claim to perform an Android BLE scan")
+
+    try:
+        adapter.connect_bluetooth("00:11:22:33:44:55")
+    except UnsupportedAdapterOperation as error:
+        assert "instrumentation" in str(error)
+    else:
+        raise AssertionError("ADB adapter should not claim to pair through shell")
+
+
+def test_dashboard_serves_full_catalog_and_selected_runs() -> None:
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base_url = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(f"{base_url}/api/catalog") as response:
+            catalog = json.loads(response.read())
+        assert catalog["counts"]["bluetooth"] > 0
+        assert catalog["counts"]["wifi"] > 0
+
+        request = json.dumps({"adapter": "fake", "case_ids": ["wifi_connected"]}).encode()
+        from urllib.request import Request
+
+        with urlopen(Request(f"{base_url}/api/run", data=request, headers={"Content-Type": "application/json"})) as response:
+            result = json.loads(response.read())["results"]
+        assert len(result) == 1
+        assert result[0]["id"] == "wifi_connected"
+        assert result[0]["status"] == "passed"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)

@@ -42,7 +42,7 @@ pytest -q
 ## 6. Run the UI
 
 ```bash
-python -m meta_wearables.web
+python -m wearables.web
 ```
 
 Then open:

@@ -14,8 +14,8 @@ test = ["pytest>=8.0"]
 bluetooth = ["bleak>=0.22"]
 
 [project.scripts]
-wearable-test = "meta_wearables.cli:main"
-wearable-ui = "meta_wearables.web:main"
+wearable-test = "wearables.cli:main"
+wearable-ui = "wearables.web:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

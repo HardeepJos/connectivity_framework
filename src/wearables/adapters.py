@@ -55,6 +55,8 @@ class FakeWearableAdapter:
     device_transport: str = "ble"
     bluetooth_version: str = "5.0"
     bluetooth_features: tuple[str, ...] | None = None
+    bluetooth_capabilities: dict[str, bool | None] | None = None
+    wifi_capabilities: dict[str, bool | None] | None = None
     classic_supported: bool = False
     ble_supported: bool = True
     _bluetooth_connected: bool = False
@@ -74,6 +76,7 @@ class FakeWearableAdapter:
                 profile="classic" if self.device_transport == "classic" else "ble",
                 signal_ok=self.signal_strength_dbm >= -70,
                 bluetooth_features=self.bluetooth_features,
+                capabilities=self.bluetooth_capabilities,
             )
         ]
 
@@ -104,6 +107,7 @@ class FakeWearableAdapter:
             profile="classic" if self.device_transport == "classic" else "ble",
             signal_ok=self.signal_strength_dbm >= -70,
             bluetooth_features=self.bluetooth_features,
+            capabilities=self.bluetooth_capabilities,
         )
 
     def wifi_info(self) -> WifiInfo:
@@ -123,11 +127,19 @@ class FakeWearableAdapter:
             roaming=self.roaming,
             internet_reachable=self.internet_reachable,
             password_valid=self.password_valid,
+            capabilities=self.wifi_capabilities,
         )
 
     def reconnect_wifi(self) -> None:
         if not self.wifi_available:
             raise ConnectionError("wearable Wi-Fi is unavailable")
+
+    def capability_info(self, domain: str) -> dict[str, bool | None]:
+        if domain.lower() == "bluetooth":
+            return self.bluetooth_capabilities or {}
+        if domain.lower() in {"wi-fi", "wifi"}:
+            return self.wifi_capabilities or {}
+        return {}
 
 
 class BleakWearableAdapter:
