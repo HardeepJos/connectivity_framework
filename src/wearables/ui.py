@@ -16,7 +16,7 @@ PAGE = r'''<!doctype html>
 <div class="layout">
 <aside class="panel controls"><h2>Run setup</h2>
 <div class="field"><label for="adapter">Test adapter</label><select id="adapter"><option value="fake">Demo / fake device</option><option value="real">Host BLE device (Bleak)</option><option value="android">Android phone via ADB</option></select><div class="hint">ADB mode reads Android Wi-Fi/radio state. It does not toggle radios or initiate pairing.</div></div>
-<div class="field" id="filter-field"><label for="filter">BLE device name filter</label><input id="filter" placeholder="e.g. Ray-Ban Meta"><div class="hint">Used with the host Bluetooth adapter.</div></div>
+<div class="field" id="filter-field"><label for="filter">BLE device name filter</label><input id="filter" placeholder="e.g. Android wearable"><div class="hint">Used with the host Bluetooth adapter.</div></div>
 <div class="field" id="serial-field" hidden><label for="serial">ADB serial (optional)</label><input id="serial" placeholder="auto-select if one device"><div class="hint">Enable USB or wireless debugging and authorize this computer on the phone.</div></div>
 <div class="btnrow"><button class="btn" id="discover-btn" type="button">Discover BLE devices</button></div><div class="devicebox" id="devicebox" role="status">No discovery run yet.</div>
 <div class="notice"><b>Android test limits:</b> Android 12+ Bluetooth scan/connect permissions, Wi-Fi location/nearby permissions, OEM privacy rules, and hidden controller state can restrict data. GATT, Classic profiles, roaming, and RF tests need a native instrumentation app and/or dedicated peer/AP fixtures.</div>

@@ -8,7 +8,7 @@ if %errorlevel%==0 (
 ) else (
     set "PYTHON=python"
 )
-echo Starting Meta Wearables UI...
+echo Starting Connectivity Test UI...
 echo Open http://127.0.0.1:8765 in your browser.
 %PYTHON% -m wearables.web --host 127.0.0.1 --port 8765
 if errorlevel 1 (

@@ -1,4 +1,4 @@
-# Meta Wearables Connectivity Test Run Guide
+# Android Wearables Connectivity Test Run Guide
 
 ## 1. Open project folder
 

@@ -12,7 +12,7 @@ class UnsupportedAdapterOperation(RuntimeError):
 
 
 class WearableAdapter(Protocol):
-    """Hardware boundary implemented by a real Meta device integration."""
+    """Hardware boundary implemented by a real device integration."""
 
     def discover(self, timeout_seconds: float = 5) -> list[DeviceInfo]: ...
 
@@ -33,11 +33,11 @@ class WearableAdapter(Protocol):
 class FakeWearableAdapter:
     """Deterministic adapter used by tests and local framework development."""
 
-    device_name: str = "Ray-Ban Meta (fake)"
+    device_name: str = "BLE wearable (fake)"
     address: str = "FA:KE:00:00:00:01"
     bluetooth_available: bool = True
     wifi_available: bool = True
-    wifi_ssid: str = "Meta-Test-Lab"
+    wifi_ssid: str = "Connectivity-Test-Lab"
     wifi_ip: str = "192.168.1.50"
     wifi_standard: str = "802.11ac"
     wifi_band_ghz: float = 5.0
@@ -181,7 +181,7 @@ class BleakWearableAdapter:
 
     def connect_bluetooth(self, address: str) -> None:
         self._run(self._connect(address))
-        self._device = DeviceInfo(self._device.name if self._device else "Meta wearable", address)
+        self._device = DeviceInfo(self._device.name if self._device else "Bluetooth peripheral", address)
 
     def disconnect_bluetooth(self) -> None:
         if self._client:
@@ -193,10 +193,10 @@ class BleakWearableAdapter:
     def bluetooth_info(self) -> DeviceInfo:
         if not self.bluetooth_connected():
             raise ConnectionError("Bluetooth device is not connected")
-        return DeviceInfo(self._device.name if self._device else "Meta wearable", self._device.address if self._device else "unknown", transport="ble")
+        return DeviceInfo(self._device.name if self._device else "Bluetooth peripheral", self._device.address if self._device else "unknown", transport="ble")
 
     def wifi_info(self) -> WifiInfo:
         raise UnsupportedAdapterOperation("Wi-Fi association state is not exposed by the generic BLE API")
 
     def reconnect_wifi(self) -> None:
-        raise UnsupportedAdapterOperation("Wi-Fi reconnect requires a Meta-approved device API")
+        raise UnsupportedAdapterOperation("Wi-Fi reconnect requires an approved device API")

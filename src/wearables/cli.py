@@ -9,7 +9,7 @@ from .runner import TestRunner
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run Meta wearable connectivity checks")
+    parser = argparse.ArgumentParser(description="Run Android wearable connectivity checks")
     parser.add_argument("--probe-host", help="Optional host to test from the Wi-Fi network")
     parser.add_argument("--probe-port", type=int, default=443)
     parser.add_argument("--json", action="store_true", dest="as_json")
