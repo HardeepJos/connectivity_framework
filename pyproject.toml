@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meta-wearables-connectivity"
+version = "0.1.0"
+description = "Bluetooth and Wi-Fi connectivity test framework for Meta wearables"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+bluetooth = ["bleak>=0.22"]
+
+[project.scripts]
+wearable-test = "meta_wearables.cli:main"
+wearable-ui = "meta_wearables.web:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.setuptools.packages.find]
+where = ["src"]
