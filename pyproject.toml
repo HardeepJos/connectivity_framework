@@ -16,6 +16,7 @@ bluetooth = ["bleak>=0.22"]
 [project.scripts]
 wearable-test = "wearables.cli:main"
 wearable-ui = "wearables.web:main"
+connectivity-desktop = "wearables.tk_ui:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

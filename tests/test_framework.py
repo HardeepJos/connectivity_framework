@@ -9,6 +9,7 @@ from wearables.cases import BLE_FEATURES_BY_VERSION, BLE_VERSIONS, CLASSIC_VERSI
 from wearables.models import TestStatus as CaseStatus
 from wearables.runner import TestRunner as CaseRunner
 from wearables.scenarios import ANDROID_SCENARIOS
+from wearables.tk_ui import PRESETS
 from wearables.web import Handler
 
 
@@ -170,3 +171,10 @@ def test_dashboard_serves_full_catalog_and_selected_runs() -> None:
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
+
+
+def test_tkinter_presets_only_reference_known_scenarios() -> None:
+    case_ids = {case.name for case in bluetooth_cases(FakeWearableAdapter()) + wifi_cases(FakeWearableAdapter())}
+
+    assert set(PRESETS) == {"Quick smoke", "BLE basics", "Wi-Fi basics"}
+    assert all(set(scenario_ids) <= case_ids for scenario_ids in PRESETS.values())

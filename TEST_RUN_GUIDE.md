@@ -41,6 +41,8 @@ pytest -q
 
 ## 6. Run the UI
 
+Start the browser dashboard:
+
 ```bash
 python -m wearables.web
 ```
@@ -50,6 +52,14 @@ Then open:
 ```text
 http://127.0.0.1:8765
 ```
+
+To use the native Tkinter desktop app instead:
+
+```bash
+python -m wearables.tk_ui
+```
+
+On Windows, double-click `launch_desktop.bat`.
 
 ## 7. Useful notes
 

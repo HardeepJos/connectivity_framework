@@ -28,6 +28,14 @@ python -m wearables.web
 
 Open `http://127.0.0.1:8765`. On Windows, `launch_ui.bat` starts it. The dashboard supports search, Bluetooth/Wi-Fi filters, category filters, quick smoke/BLE/Wi-Fi presets, selected or full-suite runs, results summaries, remembered selections, and JSON export. Full-catalog runs ask for confirmation because many scenarios require Android instrumentation and lab fixtures.
 
+## Start the Tkinter desktop app
+
+```bash
+python -m wearables.tk_ui
+```
+
+On Windows, run `launch_desktop.bat`. The desktop app provides adapter selection, device discovery, searchable/filterable scenarios, quick presets, async test execution, and JSON results export. Tkinter is included with most standard Python installers; if your Python installation reports that `tkinter` is missing, install a Python distribution that includes Tcl/Tk.
+
 ### Dashboard adapters
 
 - **Demo / fake device** — deterministic framework/UI checks only; it does not exercise physical Android hardware.
